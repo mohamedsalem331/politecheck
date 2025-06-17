@@ -1,0 +1,3 @@
+tisane:
+  api_key: "77323b8c690e48cab4117ac31a8ac90f"
+  base_url: "https://api.tisane.ai/parse" 

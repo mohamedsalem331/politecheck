@@ -1,43 +1,60 @@
 from pyramid.config import Configurator
-import structlog
+from pyramid.response import Response
+from pyramid.router import Router
+from typing import Dict, Any, Type, TypeVar, Optional
 
-# structlog.configure(
-#     processors=[
-#         structlog.contextvars.merge_contextvars,
-#         structlog.processors.add_log_level,
-#         structlog.processors.TimeStamper(fmt="iso"),
-#         structlog.processors.JSONRenderer(),
-#     ],
-#     context_class=dict,
-#     logger_factory=structlog.stdlib.LoggerFactory(),
-#     wrapper_class=structlog.stdlib.BoundLogger,
-#     cache_logger_on_first_use=True,
-# )
+from politecheck.middleware.logging import RequestLoggingMiddleware
 
+T = TypeVar('T')
 
 class Container:
     def __init__(self):
-        self.services = {}
+        self.services: Dict[str, Any] = {}
 
-    def register(self, name, instance):
+    def register(self, name: str, instance: Any) -> None:
         self.services[name] = instance
 
-    def resolve(self, name):
-        return self.services.get(name)
+    def register_factory(self, name: str, factory: callable) -> None:
+        """Register a factory function that will create the service instance."""
+        self.services[name] = factory
+
+    def resolve(self, name: str) -> Optional[Any]:
+        service = self.services.get(name)
+        if callable(service) and not isinstance(service, type):
+            # If it's a factory function, call it
+            return service()
+        return service
 
 
 container = Container()
 
 
-def main(global_config, **settings):
-    config = Configurator(settings=settings)
-    config.include(".routes")
-    config.scan(".views")
-    config.add_subscriber(
-        "politecheck.subscribers.add_logging_context", "pyramid.events.NewRequest"
-    )
-    config.add_subscriber(
-        "politecheck.subscribers.clear_logging_context",
-        "pyramid.events.NewResponse",
-    )
-    return config.make_wsgi_app()
+def includeme(config: Configurator) -> None:
+    """Pyramid includeme function to set up services."""
+    # Register the container as a service
+    config.registry.settings['container'] = container
+    
+    def get_container(request):
+        return request.registry.settings['container']
+    
+    config.add_request_method(get_container, 'container', reify=True)
+
+    # Include configuration and routes
+    config.include('politecheck.config')
+    config.include('politecheck.routes')
+    
+    # Scan for views in the resources directory
+    config.scan('politecheck.resources')
+
+
+def main(global_config: Dict[str, Any], **settings) -> Router:
+    """This function returns a Pyramid WSGI application."""
+    
+    with Configurator(settings=settings) as config:
+        config.include('pyramid_services')
+        config.include(includeme)
+        
+        app = config.make_wsgi_app()
+        app = RequestLoggingMiddleware(app)
+        
+        return app
