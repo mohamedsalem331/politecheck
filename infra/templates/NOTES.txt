@@ -1,0 +1,53 @@
+1. Get the application URL by running these commands:
+{{- if .Values.backend.ingress.enabled }}
+{{- range $host := .Values.backend.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.backend.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.backend.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "politecheck.fullname" . }}-backend)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.backend.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "politecheck.fullname" . }}-backend'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "politecheck.fullname" . }}-backend --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.backend.service.port }}
+{{- else if contains "ClusterIP" .Values.backend.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "politecheck.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=backend" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+2. Redis is deployed as a StatefulSet with persistent storage:
+   - Redis service: {{ include "politecheck.fullname" . }}-redis:{{ .Values.redis.service.port }}
+   - Backend connects to Redis using internal DNS: {{ include "politecheck.fullname" . }}-redis
+   {{- if .Values.redis.auth.enabled }}
+   - Redis authentication is enabled
+   {{- end }}
+
+3. Configuration and Secrets:
+   - ConfigMap: {{ include "politecheck.fullname" . }}-config
+   - Secret: {{ include "politecheck.fullname" . }}-secrets
+   - Tisane API key is stored in the secret
+   {{- if .Values.redis.auth.enabled }}
+   - Redis password is stored in the secret
+   {{- end }}
+
+4. Backend API is deployed with {{ .Values.backend.replicaCount }} replicas and can scale to {{ .Values.backend.autoscaling.maxReplicas }} replicas.
+
+5. Health checks are configured:
+   - Liveness probe: /health endpoint (30s initial delay, 10s period)
+   - Readiness probe: /health endpoint (5s initial delay, 5s period)
+
+6. To check the status of your deployment:
+   kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "politecheck.name" . }},app.kubernetes.io/instance={{ .Release.Name }}"
+
+7. To view logs:
+   kubectl logs --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "politecheck.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=backend"
+
+8. To view configuration:
+   kubectl get configmap {{ include "politecheck.fullname" . }}-config --namespace {{ .Release.Namespace }} -o yaml
+   kubectl get secret {{ include "politecheck.fullname" . }}-secrets --namespace {{ .Release.Namespace }} -o yaml

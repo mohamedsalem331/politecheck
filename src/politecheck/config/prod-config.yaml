@@ -1,3 +1,9 @@
 tisane:
-  api_key: "77323b8c690e48cab4117ac31a8ac90f"
-  base_url: "https://api.tisane.ai/parse" 
+  api_key: ""
+  base_url: "https://api.tisane.ai/parse"
+
+redis:
+  host: "${REDIS_HOST}"
+  port: "${REDIS_PORT}"
+  db: "${REDIS_DB}"
+  password: null 

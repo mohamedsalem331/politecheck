@@ -43,6 +43,10 @@ def includeme(config: Configurator) -> None:
     config.include('politecheck.config')
     config.include('politecheck.routes')
     
+    # Include services
+    config.include('politecheck.services.tisane')
+    config.include('politecheck.services.redis_service')
+    
     # Scan for views in the resources directory
     config.scan('politecheck.resources')
 
