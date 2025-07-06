@@ -21,9 +21,9 @@
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
 {{- end }}
 
-2. Redis is deployed as a StatefulSet with persistent storage:
-   - Redis service: {{ include "politecheck.fullname" . }}-redis:{{ .Values.redis.service.port }}
-   - Backend connects to Redis using internal DNS: {{ include "politecheck.fullname" . }}-redis
+2. Redis is deployed using Bitnami Redis chart:
+   - Redis service: {{ include "politecheck.fullname" . }}-redis-master:{{ .Values.redis.service.port }}
+   - Backend connects to Redis using internal DNS: {{ include "politecheck.fullname" . }}-redis-master
    {{- if .Values.redis.auth.enabled }}
    - Redis authentication is enabled
    {{- end }}
@@ -51,3 +51,6 @@
 8. To view configuration:
    kubectl get configmap {{ include "politecheck.fullname" . }}-config --namespace {{ .Release.Namespace }} -o yaml
    kubectl get secret {{ include "politecheck.fullname" . }}-secrets --namespace {{ .Release.Namespace }} -o yaml
+
+9. To download and update dependencies:
+   helm dependency update {{ .Chart.Name }}

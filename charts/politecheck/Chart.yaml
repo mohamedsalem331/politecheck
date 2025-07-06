@@ -9,7 +9,7 @@ description: A Helm chart for Kubernetes
 #
 # Library charts provide useful utilities or functions for the chart developer. They're included as
 # a dependency of application charts to inject those utilities and functions into the rendering
-# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+# pipeline. Library charts are not installed and managed by the Helm CLI.
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
@@ -22,3 +22,24 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
+
+# Keywords to help users find this chart
+keywords:
+  - politecheck
+  - nlp
+  - content-moderation
+  - tisane
+
+# Home page of the project
+home: https://github.com/your-org/politecheck
+
+# Source code of the project
+sources:
+  - https://github.com/your-org/politecheck
+
+# Dependencies
+dependencies:
+  - name: redis
+    version: 21.2.6
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled

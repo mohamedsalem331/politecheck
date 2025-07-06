@@ -5,23 +5,17 @@ metadata:
   labels:
     {{- include "politecheck.labels" . | nindent 4 }}
 data:
-  # Application configuration
   POLITECHECK_ENV: "prod"
-  
-  # Redis configuration
-  REDIS_HOST: "{{ include "politecheck.fullname" . }}-redis"
+  REDIS_HOST: "{{ include "politecheck.fullname" . }}-redis-master"
   REDIS_PORT: "{{ .Values.redis.service.port }}"
   REDIS_DB: "0"
   {{- if .Values.redis.auth.enabled }}
   REDIS_PASSWORD: "${REDIS_PASSWORD}"
   {{- end }}
   
-  # Tisane API configuration
   TISANE_BASE_URL: "{{ .Values.tisane.baseUrl }}"
   
-  # Logging configuration
   LOG_LEVEL: "{{ .Values.backend.logging.level | default "INFO" }}"
   
-  # Application settings
   APP_NAME: "{{ include "politecheck.name" . }}"
   APP_VERSION: "{{ .Chart.AppVersion }}" 

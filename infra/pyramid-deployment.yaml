@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyramid-backend
+  namespace: politecheck
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pyramid
+  template:
+    metadata:
+      labels:
+        app: pyramid
+    spec:
+      containers:
+      - name: pyramid
+        image: mohamed331/politecheck:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_PORT
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_DB
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: REDIS_PASSWORD
+        - name: TISANE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: TISANE_API_KEY
+        - name: TISANE_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: TISANE_BASE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pyramid-service
+  namespace: myapp
+spec:
+  type: NodePort
+  selector:
+    app: pyramid
+  ports:
+  - port: 8000
+    targetPort: 8000
+    nodePort: 30080

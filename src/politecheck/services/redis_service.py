@@ -29,7 +29,6 @@ class RedisService:
             result = self.redis_client.set(key, value, ex=expire)
             return result
         except redis.RedisError as e:
-            # Log the error (you might want to add proper logging here)
             raise redis.RedisError(f"Failed to set key '{key}': {str(e)}")
     
     def get(self, key: str) -> Optional[Any]:

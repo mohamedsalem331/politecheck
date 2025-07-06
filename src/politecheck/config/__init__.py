@@ -3,14 +3,10 @@ import yaml
 from pyramid.config import Configurator
 from pyramid.settings import asbool
 
-def get_config_path(env: str):
-    """Get the path to the configuration file based on environment."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, 'config', f'{env}-config.yaml')
-
 def load_config(env: str):
     """Load configuration from YAML file."""
-    config_path = get_config_path(env)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(base_dir, 'config', f'{env}-config.yaml')
     
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
